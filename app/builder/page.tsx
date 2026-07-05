@@ -1,29 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-
-type FormState = {
-  year: string;
-  make: string;
-  model: string;
-  trim: string;
-  mileage: string;
-  price: string;
-  features: string;
-};
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { BUILDER_FORM_STORAGE_KEY, FormState, initialForm } from "./types";
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
-
-const initialForm: FormState = {
-  year: "",
-  make: "",
-  model: "",
-  trim: "",
-  mileage: "",
-  price: "",
-  features: "",
-};
 
 function validate(form: FormState): FormErrors {
   const errors: FormErrors = {};
@@ -78,9 +60,23 @@ function Field({
 }
 
 export default function Builder() {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(BUILDER_FORM_STORAGE_KEY);
+      // One-time hydration from sessionStorage on mount (e.g. returning via
+      // "Edit"), not a derived-state sync — sessionStorage is unavailable
+      // during SSR, so this can't run as a lazy useState initializer without
+      // risking a hydration mismatch.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (raw) setForm(JSON.parse(raw));
+    } catch {
+      // malformed or inaccessible storage — keep initialForm
+    }
+  }, []);
 
   function handleChange(field: keyof FormState) {
     return (
@@ -95,7 +91,14 @@ export default function Builder() {
     e.preventDefault();
     const newErrors = validate(form);
     setErrors(newErrors);
-    setSubmitted(Object.keys(newErrors).length === 0);
+    if (Object.keys(newErrors).length === 0) {
+      try {
+        sessionStorage.setItem(BUILDER_FORM_STORAGE_KEY, JSON.stringify(form));
+      } catch {
+        // storage unavailable — proceed anyway, review page handles missing data
+      }
+      router.push("/builder/review");
+    }
   }
 
   return (
@@ -213,11 +216,6 @@ export default function Builder() {
           </section>
 
           <div className="flex flex-col items-end gap-3">
-            {submitted && (
-              <p className="text-sm text-amber-400">
-                Looks good — the next step is coming soon.
-              </p>
-            )}
             <button
               type="submit"
               className="inline-flex w-full items-center justify-center rounded-full bg-amber-400 px-8 py-3.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-300 sm:w-auto"
