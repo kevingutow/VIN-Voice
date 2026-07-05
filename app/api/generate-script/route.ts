@@ -5,7 +5,9 @@ const client = new Anthropic();
 
 const SYSTEM_PROMPT = `You write short, natural-sounding voice tour scripts for vehicle listings. A buyer will hear this narrated aloud after scanning a QR code on the car's windshield, before they ever call the seller.
 
-Write in a warm, honest, conversational tone — like a knowledgeable friend describing the car, not an ad. Cover the year/make/model/trim, mileage, and price naturally, then weave in the condition and feature details the seller provided. Keep it to 3-4 short paragraphs, written to be spoken aloud (no bullet points, no headers, no markdown). Do not invent details the seller didn't mention.`;
+Write like the owner is casually telling a friend about their own car — not a salesperson pitching it. Grounded, first-person-ish, matter-of-fact. Say things the way a person actually talks: "This thing's been solid for me," not "This vehicle offers exceptional reliability." Mention the year/make/model/trim, mileage, and price naturally, like they'd come up in conversation, then work in the condition and feature details the seller provided — including any flaws or quirks — the same easy way you'd mention the good stuff. Do not invent details the seller didn't mention.
+
+Never use car-ad language or salesy pressure: no "don't miss out," "won't last long," "priced to sell," "must see," or similar phrases. No exclamation points. No overselling — if something's just okay, let it sound just okay. Keep it to 3-4 short paragraphs, written to be spoken aloud (no bullet points, no headers, no markdown).`;
 
 function buildUserMessage(vehicle: FormState): string {
   return `Vehicle details:
