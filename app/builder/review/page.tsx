@@ -31,6 +31,9 @@ function SummaryField({ label, value }: { label: string; value: string }) {
 export default function BuilderReview() {
   const router = useRouter();
   const [form, setForm] = useState<FormState | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [script, setScript] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -49,6 +52,27 @@ export default function BuilderReview() {
   }, [router]);
 
   if (!form) return null;
+
+  async function handleGenerateScript() {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/generate-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong generating the script.");
+      }
+      setScript(data.script);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong generating the script.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -95,6 +119,13 @@ export default function BuilderReview() {
             <SummaryField label="Tell us about the car" value={form.features} />
           </section>
 
+          {script && (
+            <section className="rounded-2xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
+              <h2 className="mb-6 text-xl font-semibold">Your Voice Tour Script</h2>
+              <p className="whitespace-pre-line leading-7 text-zinc-200">{script}</p>
+            </section>
+          )}
+
           <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               href="/builder"
@@ -103,15 +134,14 @@ export default function BuilderReview() {
               ← Edit details
             </Link>
             <div className="flex flex-col items-end gap-3">
-              <p className="text-sm text-amber-400">
-                Voice script generation is coming soon.
-              </p>
+              {error && <p className="text-sm text-red-400">{error}</p>}
               <button
                 type="button"
-                disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-full bg-amber-400/40 px-8 py-3.5 text-sm font-semibold text-zinc-950/70 sm:w-auto"
+                onClick={handleGenerateScript}
+                disabled={isGenerating}
+                className="inline-flex w-full items-center justify-center rounded-full bg-amber-400 px-8 py-3.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-amber-400/40 disabled:text-zinc-950/70 disabled:hover:bg-amber-400/40 sm:w-auto"
               >
-                Generate Script
+                {isGenerating ? "Generating…" : script ? "Regenerate Script" : "Generate Script"}
               </button>
             </div>
           </div>
