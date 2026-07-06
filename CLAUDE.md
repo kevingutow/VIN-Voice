@@ -28,3 +28,9 @@ Standard `create-next-app` App Router layout:
 Styling is Tailwind CSS v4, configured via the `@tailwindcss/postcss` PostCSS plugin (`postcss.config.mjs`) rather than a `tailwind.config.js` file.
 
 The codebase is currently just the unmodified scaffold — no custom routes, components, or data layer have been added yet.
+
+## Future Features (Not Yet Built)
+
+- Multi-language support: Spanish and Polish voice options using ElevenLabs' multilingual model, with translated scripts generated via Claude
+- Multiple voice presets: male/female options across calm, energetic, and friendly tones (6 total combinations) via ElevenLabs Voice Library
+- Background music mixed under the generated voice track (source: Suno, pending confirmation of commercial licensing terms for whichever Suno plan is used)
