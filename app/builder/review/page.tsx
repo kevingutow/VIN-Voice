@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BUILDER_FORM_STORAGE_KEY, FormState } from "../types";
+import { DEFAULT_VOICE_ID, VOICE_OPTIONS, VoiceOption } from "../voices";
 
 function formatMileage(value: string) {
   const n = Number(value);
@@ -28,6 +29,59 @@ function SummaryField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function VoiceCard({
+  voice,
+  isSelected,
+  previewState,
+  onSelect,
+  onPlaySample,
+}: {
+  voice: VoiceOption;
+  isSelected: boolean;
+  previewState: "idle" | "loading" | "playing" | "error";
+  onSelect: () => void;
+  onPlaySample: () => void;
+}) {
+  const sampleLabel =
+    previewState === "loading" ? "Loading…" : previewState === "playing" ? "Playing…" : "▶ Play Sample";
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${
+        isSelected
+          ? "border-amber-400 bg-amber-400/10"
+          : "border-white/10 bg-zinc-950 hover:border-white/20"
+      }`}
+    >
+      <p className={`mb-3 text-sm font-semibold ${isSelected ? "text-amber-400" : "text-white"}`}>
+        {voice.label}
+      </p>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onPlaySample();
+        }}
+        className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-white/30 hover:text-white"
+      >
+        {sampleLabel}
+      </button>
+      {previewState === "error" && (
+        <p className="mt-2 text-xs text-red-400">Couldn&apos;t play this sample.</p>
+      )}
+    </div>
+  );
+}
+
 export default function BuilderReview() {
   const router = useRouter();
   const [form, setForm] = useState<FormState | null>(null);
@@ -37,12 +91,24 @@ export default function BuilderReview() {
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [voiceId, setVoiceId] = useState(DEFAULT_VOICE_ID);
+  const [previewStatus, setPreviewStatus] = useState<{
+    voiceId: string;
+    state: "loading" | "playing" | "error";
+  } | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     return () => {
       if (audioUrl) URL.revokeObjectURL(audioUrl);
     };
   }, [audioUrl]);
+
+  useEffect(() => {
+    return () => {
+      previewAudioRef.current?.pause();
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -85,6 +151,18 @@ export default function BuilderReview() {
     }
   }
 
+  function handlePlaySample(id: string) {
+    previewAudioRef.current?.pause();
+    setPreviewStatus({ voiceId: id, state: "loading" });
+
+    const audio = new Audio(`/api/voice-preview?voiceId=${encodeURIComponent(id)}`);
+    previewAudioRef.current = audio;
+    audio.addEventListener("playing", () => setPreviewStatus({ voiceId: id, state: "playing" }));
+    audio.addEventListener("ended", () => setPreviewStatus(null));
+    audio.addEventListener("error", () => setPreviewStatus({ voiceId: id, state: "error" }));
+    audio.play().catch(() => setPreviewStatus({ voiceId: id, state: "error" }));
+  }
+
   async function handleGenerateAudio() {
     if (!script) return;
     setIsGeneratingAudio(true);
@@ -93,7 +171,7 @@ export default function BuilderReview() {
       const response = await fetch("/api/generate-audio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: script }),
+        body: JSON.stringify({ text: script, voiceId }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -158,7 +236,25 @@ export default function BuilderReview() {
               <h2 className="mb-6 text-xl font-semibold">Your Voice Tour Script</h2>
               <p className="whitespace-pre-line leading-7 text-zinc-200">{script}</p>
 
-              <div className="mt-6 flex flex-col items-start gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-6 border-t border-white/10 pt-6">
+                <p className="mb-4 text-sm font-medium text-zinc-300">Voice</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {VOICE_OPTIONS.map((voice) => (
+                    <VoiceCard
+                      key={voice.id}
+                      voice={voice}
+                      isSelected={voiceId === voice.id}
+                      previewState={
+                        previewStatus?.voiceId === voice.id ? previewStatus.state : "idle"
+                      }
+                      onSelect={() => setVoiceId(voice.id)}
+                      onPlaySample={() => handlePlaySample(voice.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex w-full flex-col gap-3 sm:w-auto">
                   {audioError && <p className="text-sm text-red-400">{audioError}</p>}
                   {audioUrl && (
