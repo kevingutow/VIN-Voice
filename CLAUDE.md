@@ -29,6 +29,18 @@ Styling is Tailwind CSS v4, configured via the `@tailwindcss/postcss` PostCSS pl
 
 The codebase is currently just the unmodified scaffold — no custom routes, components, or data layer have been added yet.
 
+## Recent Session Notes
+
+Rebuilt the homepage (`app/page.tsx`) with a Kero-template-inspired layout, built natively in React/Tailwind (no animation libraries):
+
+- **Hero**: full-width cinematic background using the BMW/Porsche dealership-lot photo (`public/ivan-kazlouskij-euFJPwObDWI-unsplash.jpg`), dark gradient overlay for text legibility, and a floating QR code graphic positioned over roughly the driver's-side window with a gentle continuous bob (pure CSS `@keyframes`, see `float-bob` in `app/globals.css`).
+- **How it works**: restyled into a 3-column icon/heading/description feature grid (same copy as before).
+- **Band section**: bold statement + expansion tag labels (Cars/Motorcycles/Boats/RVs) over a full-width background. Uses a CSS radial-gradient placeholder — `/bmw-citylights.jpg` was referenced in the original spec but never added to `public/`; swap in the real photo when available.
+- **Pricing**: initially added as a homepage section, then split out into its own route at `app/pricing/page.tsx` (Free/Pro/Dealer tiers) so the nav's "Pricing" link has a real destination.
+- Extracted shared chrome into `app/components/`: `SiteHeader.tsx` (nav + mobile menu), `GetStartedButton.tsx`, `ClosingCta.tsx` — used by both the homepage and the pricing page. Footer stays inlined per-page (trivial, not worth extracting).
+
+Two real bugs hit and fixed during this work, worth knowing if editing the hero again: (1) Tailwind's `from-x via-x/70 to-x/40` gradient shorthand can mix `lab()`/`oklab()` color spaces and render as solid opaque black in Chromium — use explicit `rgba()` gradients instead; (2) a `position: relative` section with no `z-index` doesn't establish its own stacking context, so negative-`z-index` children (background image/overlay layers) can escape and paint behind the page's root background — give the section an explicit `z-0` alongside `relative`.
+
 ## Future Features (Not Yet Built)
 
 - Multi-language support: Spanish and Polish voice options using ElevenLabs' multilingual model, with translated scripts generated via Claude
