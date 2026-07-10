@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ClosingCta } from "./components/ClosingCta";
 import { GetStartedButton } from "./components/GetStartedButton";
+import { HeroDemo } from "./components/HeroDemo";
 import { SiteHeader } from "./components/SiteHeader";
 
 const DocumentIcon = () => (
@@ -98,7 +99,7 @@ export default function Home() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative z-0 flex min-h-[85vh] items-center overflow-hidden px-6 py-28">
+      <section className="relative z-0 flex h-[70vh] min-h-[30rem] w-full items-end overflow-hidden pb-16 sm:h-[90vh] sm:pb-24">
         <div className="absolute inset-0 -z-20">
           <Image
             src="/ivan-kazlouskij-euFJPwObDWI-unsplash.jpg"
@@ -110,7 +111,7 @@ export default function Home() {
           />
         </div>
         <div
-          className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgba(9,9,11,1)_0%,rgba(9,9,11,0.72)_45%,rgba(9,9,11,0.45)_100%)]"
+          className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgba(9,9,11,0.9)_0%,rgba(9,9,11,0.4)_40%,rgba(9,9,11,0)_70%)]"
           aria-hidden
         />
 
@@ -123,24 +124,18 @@ export default function Home() {
           <QRGraphic className="w-16 shadow-[0_8px_30px_rgba(0,0,0,0.5)] sm:w-20" />
         </div>
 
-        <div className="relative mx-auto max-w-3xl text-center">
-          <span className="mb-6 inline-block rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-amber-300">
-            AI voice tours for every listing
-          </span>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-            Scan the tag. Hear the car.
+        <div className="relative mx-auto w-full max-w-3xl px-6 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">
+            Scan the Tag. Hear the Car.
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-zinc-300">
-            Turn any vehicle listing into a natural-sounding sales script
-            buyers can hear before they ever pick up the phone.
-          </p>
-          <p className="mt-4 text-sm text-zinc-400">Free to try. No credit card required.</p>
           <GetStartedButton
-            className="mt-10 px-8 py-4 text-base"
+            className="mt-8 px-8 py-4 text-base"
             label="Get your first tour free"
           />
         </div>
       </section>
+
+      <HeroDemo />
 
       {/* How it works */}
       <section className="border-t border-white/10 px-6 py-24">
