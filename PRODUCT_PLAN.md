@@ -75,24 +75,49 @@ support for the other categories.
 
 ## Script generation — persona spec
 
-The `generate-script` prompt should blend two sales personas rather than
-being generic marketing copy. Written up in full, with concrete
-techniques and hard constraints (no fabricated facts, no deceptive
-framing), in `skills/private-seller.md` and `skills/dealership-closer.md`
-— **not yet wired into `app/api/generate-script/route.ts`**, that's the
-next step once we're ready to build this.
+**Built and shipped (2026-07-12), direction chosen by the user:** the
+original plan was to blend two personas (private seller + dealership
+closer, written up in `skills/private-seller.md` and
+`skills/dealership-closer.md`). After hearing the first blended-tone
+results, the user explicitly chose the **dealership-closer direction,
+dialed up** — a confident, magnetic salesperson hyping the vehicle, with
+the price framed as "the easy part." The private-seller persona
+(humble, flaw-forward) is retained in `skills/` as reference but is
+**not** the shipped voice; it could return later as a user-selectable
+"tone" option.
 
-1. **A private seller maximizing perceived value** — personal story, care
-   and maintenance history, emotional framing, references anything the
-   user uploaded (service records, mod photos).
-2. **A dealership lot closer** — confident, benefit-forward, concise,
-   creates urgency, feature-first cadence, professional.
+What the shipped prompt (`app/api/generate-script/route.ts`) does:
+
+1. **Hook-first structure** — never opens with year/make/model (the
+   buyer can see that); opens with an aspirational/sensory line to
+   survive the first five seconds.
+2. **Brand-character matching** — recognizes what the make represents
+   and shifts register: luxury brands (BMW, Mercedes, Porsche, Lexus,
+   Audi, …) get elevated prestige/craftsmanship language; performance
+   models get adrenaline; mainstream brands (Honda, Toyota, …) get
+   smart-money confidence; trucks/SUVs get capability. **No hardcoded
+   brand list in code** — Claude's own brand knowledge does the
+   recognition, so typos/synonyms/new brands all work.
+3. **Model-reputation selling points** — pulls what that specific
+   make/model/year is genuinely known for (reliability, resale, awards)
+   even when the seller didn't type it. This covers the "use that
+   model's perks" request via Claude's built-in knowledge; a live
+   past-sales/comps data feed was considered and deferred — revisit only
+   if built-in knowledge proves insufficient.
+4. **Price = no big deal** — dropped casually, framed as the easy part.
+5. **Honesty guardrails kept** — may hype the model's reputation, may
+   never invent specifics (equipment/history/condition) about this exact
+   car, never contradicts disclosed flaws, no fabricated market
+   comparisons.
 
 Hard constraints:
-- Target **~150 words**, calibrated to land at **~60 seconds** spoken,
-  tuned to the pace of whichever ElevenLabs voice is selected.
-- Background music: soft, energetic, mixed under the narration (pending
-  Suno licensing confirmation — see `CLAUDE.md` future features).
+- Target **~140 words** → lands ~50–65 seconds spoken (measured against
+  real ElevenLabs output at 143–174 wpm run-to-run variance; exact-60
+  every time isn't achievable, the band is the spec).
+- Background music: soft, energetic, high-end-showroom feel, mixed under
+  the narration — **still unbuilt**; needs a licensed track (Suno
+  licensing unconfirmed — see `CLAUDE.md`) plus audio-mixing work.
+  This is the next piece of the script/audio-quality phase.
 
 ## Photo/document upload
 
