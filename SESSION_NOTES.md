@@ -1,35 +1,140 @@
-# Session Notes — 2026-07-10
+# Session Notes — 2026-07-11
 
-## Decisions so far (see CLAUDE.md)
+## ⚠️ First thing next session: set up the Vercel Blob token
 
-- Stack/scaffold, commands, and architecture are documented in `CLAUDE.md` — Next.js 16.2.10 App Router, Tailwind v4, no test runner configured yet.
-- Prior sessions (per `CLAUDE.md` "Recent Session Notes"): homepage rebuilt in a Kero-inspired layout, pricing split out to its own `/pricing` route, shared chrome extracted to `app/components/` (`SiteHeader`, `GetStartedButton`, `ClosingCta`).
-- No separate product-plan doc exists in the repo. The only forward-looking plan is `CLAUDE.md`'s "Future Features (Not Yet Built)" section: multi-language voices (Spanish/Polish), 6 voice presets, background music (Suno, licensing TBD). If a plan doc exists outside this repo (Notion/Docs/etc.), it wasn't referenced this session.
-- Beyond the homepage, the app already has `/builder`, `/builder/review`, and API routes (`generate-audio`, `generate-script`, `voice-preview`) from earlier sessions — untouched today.
+Nothing in the new save/QR flow can actually run until `BLOB_READ_WRITE_TOKEN`
+is a real value in `.env.local`. Right now `/api/save-listing` fails closed
+with a 500 at the very first check. Steps (also detailed further down):
+
+1. `npx vercel login` (interactive — opens a browser confirmation)
+2. `npx vercel link` (creates/links the Vercel project — none exists yet)
+3. Vercel dashboard → project → **Storage** → **Create Database** → **Blob**
+   → enable for Development + Production
+4. Vercel dashboard → **Settings → Environment Variables** → add
+   `ANTHROPIC_API_KEY` and `ELEVENLABS_API_KEY` too (needed for a real
+   deploy anyway, and makes step 5 safe)
+5. `npx vercel env pull .env.local`
+
+Once that's done: run the builder → review → "Save & Get QR Code" flow for
+real, confirm the QR image renders, confirm `/listing/<uuid>` actually plays
+audio from a `*.public.blob.vercel-storage.com` URL. That's the real
+end-to-end proof this feature works — nothing before that point has been
+verified against a live Blob store.
+
+## Decisions so far (see CLAUDE.md + PRODUCT_PLAN.md)
+
+- `CLAUDE.md`: stack/architecture/commands (Next.js 16.2.10, Tailwind v4, no
+  test runner). Also documents two rendering bugs worth knowing if touching
+  the hero again (gradient color-space issue, missing stacking context).
+- `PRODUCT_PLAN.md` (new this session): full product vision — accounts,
+  vehicle categories beyond cars (motorcycle/RV/boat), a physical "For Sale
+  Sign" product (leaning hang-tag form factor, ~4"×7", brand-consistent
+  black/blue/silver), two-audience pricing model (one-time private sellers
+  vs. recurring dealers), slogan bank, and the agreed build sequence:
+  **(1) core software loop → (2) script/audio quality → (3) physical sign →
+  (4) marketing site → (5) pricing.** This session was #1.
+- `skills/private-seller.md` / `skills/dealership-closer.md`: the two sales
+  personas the script generator should eventually blend. **Written but not
+  yet wired into `app/api/generate-script/route.ts`** — that's a real next
+  step, not done yet.
 
 ## What was done this session
 
-1. **Hero archaeology + revert** — traced `app/page.tsx` git history to find the commit right before pricing was split off the homepage: `35c03f4` ("Redesign homepage hero with blue brand accent and demo card"), immediately before `fa8ebeb` (which both rebuilt the hero *and* split pricing into `/pricing` in the same commit). Restored that hero's content (logo, "AI voice tours for every listing" tag, "Scan the tag. Hear the car." headline, blue CTA, "Hear it in action" waveform demo card wired to `sample-tour.mp3`) into a new component: **`app/components/HeroDemo.tsx`** (new file, client component).
-2. **Hero restructure to match hearmyhome.com pattern** — `app/page.tsx` hero is now: full-width cinematic three-cars photo (`ivan-kazlouskij-...jpg`) as the first thing on the page, floating QR-code graphic overlapping the driver's window (bottom-anchored bob animation), minimal overlay copy **"Scan the Tag. Hear the Car."** + one CTA ("Get your first tour free"). `HeroDemo` (the restored 35c03f4 content) sits directly below it, not overlapping.
-3. **Header logo swap** — `app/components/SiteHeader.tsx`: replaced the "VIN Voice" text wordmark with the actual logo asset (`public/image.png`). That source file is a large 1536×1024 lockup (icon + wordmark + tagline on black) which is illegible when just shrunk to nav height, so it's cropped via absolute-positioned/scaled `<Image>` inside an overflow-hidden container to isolate just the "VIN VOICE" wordmark band (crop coords derived with `sips` — see component for exact offsets).
-4. **Nav restructure** — "How it works" / "Pricing" / "Log in" no longer show as inline links at any breakpoint; they're only reachable via the hamburger (3-bar) icon dropdown, now visible at all screen sizes (previously mobile-only).
-5. Added back a `soundbar` `@keyframes` in `app/globals.css` (needed by the waveform demo card, had been dropped in a previous session).
+Closed the core product loop — previously, script + audio generation worked
+but nothing persisted and there was no QR code output at all. Now:
 
-**Commands run:** `npx tsc --noEmit`, `npm run lint` (clean after every change), `git log --follow` / `git show` for history archaeology, `sips` for pixel-precise logo cropping, and Playwright (installed standalone into the scratchpad dir, *not* added to the project's `package.json`) driving a headless Chromium to screenshot and verify both the hero and header states — no console errors observed.
+1. **`app/api/save-listing/route.ts`** (new) — takes the already-generated
+   audio bytes (reuses what the client already fetched for preview, no
+   second ElevenLabs call) + form/script/voice as multipart FormData,
+   uploads audio + a generated QR PNG + a JSON metadata file to **Vercel
+   Blob** at deterministic per-listing paths (`listings/{uuid}/...`).
+   **Deliberately no database** — the only access pattern needed is "look
+   up one listing by ID," which Blob's `head()`+`fetch()` handles; a real
+   DB is deferred until accounts/dashboards create an actual relational
+   need.
+2. **`app/listing/[id]/page.tsx` + `not-found.tsx`** (new) — the public
+   page a QR scan lands on: vehicle summary, script text, `<audio>` player.
+   404s cleanly on invalid/missing IDs.
+3. **`app/builder/review/page.tsx`** — added the "Save & Get QR Code" step
+   after audio generation: shows the QR image, a copyable/shareable link,
+   a download-QR link, and a print button. Correctly invalidates the saved
+   state whenever script or audio is regenerated.
+4. **Consolidation**: `isFormState` moved into `app/builder/types.ts`,
+   `VALID_VOICE_IDS` added to `app/builder/voices.ts`, `formatMileage`/
+   `formatPrice` extracted to `app/lib/format.ts` — all now shared across
+   the three existing API routes plus the two new files, instead of each
+   reimplementing them.
+5. New deps: `@vercel/blob`, `qrcode`, `@types/qrcode`.
+6. `app/components/SiteHeader.tsx`, `app/page.tsx`, `app/components/HeroDemo.tsx`,
+   `app/globals.css` — carried over from **last** session (hero restructure
+   to match hearmyhome.com's pattern, logo crop, nav-behind-hamburger).
+   Already committed last session; no changes to these this session.
 
-**Files changed:** `app/page.tsx`, `app/components/SiteHeader.tsx`, `app/globals.css` (all modified) + `app/components/HeroDemo.tsx` (new, untracked). **Nothing has been committed** — all of this is still sitting in the working tree.
+**Commands run:** `npx tsc --noEmit`, `npm run lint` (both clean),
+`git log`/`git show` for archaeology, `sips` for the earlier logo crop.
+Attempted `npm install -g vercel` and `npx vercel login` — both blocked by
+a root-owned `/usr/local` and a root-owned `~/.npm` cache respectively (see
+below). Reviewed every new/changed file by hand this session per explicit
+request ("run through all the files, does everything look ok") — see the
+security note below for the one real finding.
+
+**All work is committed locally** (5 commits, `main` is 5 commits ahead of
+`origin/main`, **not pushed** — push only if explicitly asked):
+- `bb87b71` hero/header restructure (from last session)
+- `e857e1c` QR code + Blob persistence feature
+- `703df9e` PRODUCT_PLAN.md + persona skills
+- `e5a1cc4` run skill
+
+## Security note — already fixed, but worth knowing
+
+`.env.local.example` briefly contained **real, live** `ANTHROPIC_API_KEY`
+and `ELEVENLABS_API_KEY` values instead of blank placeholders (an
+implementation mistake, not something the user did). It was **never
+committed** — `.gitignore`'s broad `.env*` pattern accidentally caught it
+too — but the values were displayed in this session's tool output when the
+file was read during review, which counts as exposure. **Recommended:
+rotate both keys** next session if not already done (regenerate in the
+Anthropic and ElevenLabs dashboards, update `.env.local`). The example file
+now has blank placeholders, and `.gitignore` was updated with a
+`!.env.local.example` exception so it can be committed as a real template
+going forward (confirmed the real `.env.local` is still fully ignored).
+Also added `.claude/settings.local.json` to `.gitignore` (local-only tool
+permissions, not meant to be shared).
 
 ## Open issues / things hit along the way
 
-- **"Site not up" mid-session:** the dev server was stopped after each screenshot-verification pass; when the user tried to load `localhost:3000` themselves it was down. Restarted with `npm run dev` and confirmed 200 — just remember to leave the dev server running (or restart it) before viewing in a browser.
-- `chromium-cli` isn't available in this environment; verification screenshots required installing `playwright` locally inside the scratchpad directory (outside the repo) rather than as a project dependency.
-- `next.config.ts` has a **pre-existing, unrelated uncommitted change** (dropped trailing semicolon/newline) that was already in the working tree before this session started — left alone, still uncommitted.
-- The "Band" section's background is still the placeholder radial-gradient noted in `CLAUDE.md` — the real `/bmw-citylights.jpg` was never added to `public/`. Unrelated to this session's work but still open.
-- The hero now literally repeats "Scan the tag / Scan the Tag. Hear the car / Hear the Car." twice on the page (once as the new photo-overlay tagline, once as the `HeroDemo` headline below it) — this was an explicit user choice when asked to clarify, but worth a second look if it reads as redundant once seen live.
+- **No Vercel project linked yet** — `.vercel/` doesn't exist locally.
+  This blocks Blob store creation, which blocks any real verification of
+  the save/QR flow. See the top of this file for the exact steps.
+- **Global npm installs are broken on this machine**: `/usr/local/lib/node_modules`
+  is root-owned (blocks `npm install -g`), and `~/.npm` cache is also
+  root-owned (blocks even `npx` from installing packages on demand — fails
+  with `EACCES` on cache writes). Worked around mid-session with a
+  scratchpad-local npm cache for one-off tasks (Playwright for screenshots),
+  but **`npx vercel login`/`vercel link` will hit the same wall** unless
+  fixed first. Fix: `sudo chown -R 501:20 "/Users/kevingutow/.npm"` — not run
+  yet, needs the user's password, offered but not executed.
+- Local end-to-end testing of `/api/save-listing` is **entirely blocked**
+  until the Blob token exists — this isn't a bug, just unstarted work.
+- Carried over from last session, still open: Band section's background is
+  still a placeholder gradient (real `/bmw-citylights.jpg` never sourced);
+  hero repeats "Scan the tag / hear the car" phrasing twice in a row
+  (explicit user choice, flagged as worth a second look).
 
-## Next steps
+## Next steps, in order
 
-1. Decide whether to `git commit` — everything above is uncommitted.
-2. Re-read the hero + HeroDemo back-to-back live in the browser and decide if the repeated "Scan the tag..." copy and back-to-back CTAs ("Get your first tour free" appears twice) should be varied.
-3. If a cleaner header mark is wanted later, consider asking for a dedicated small logo/icon asset instead of cropping the large hero lockup graphic — the current CSS crop is precise but brittle if `public/image.png` is ever replaced.
-4. Swap in the real `/bmw-citylights.jpg` for the Band section whenever that asset is available (pre-existing TODO, not new).
+1. **Fix the npm cache ownership** (`sudo chown -R 501:20 ~/.npm`) so
+   `npx vercel ...` commands stop failing.
+2. **Get the Blob token** — see the walkthrough at the top of this file.
+3. **Run a real end-to-end verification**: builder → review → generate
+   script → generate audio → Save & Get QR Code → open `/listing/<uuid>` →
+   confirm audio actually plays from a Blob URL. Confirm 404 behavior on a
+   bogus UUID.
+4. Consider rotating `ANTHROPIC_API_KEY`/`ELEVENLABS_API_KEY` (see security
+   note above) — not urgent, but recommended.
+5. Once the core loop is verified live, per `PRODUCT_PLAN.md`'s agreed
+   sequence, move to **script/audio quality**: wire the two persona skills
+   (`skills/private-seller.md`, `skills/dealership-closer.md`) into
+   `app/api/generate-script/route.ts`'s system prompt, and calibrate for
+   ~150 words / ~60 seconds spoken.
+6. Decide whether to `git push` — 5 commits are sitting local-only right now.
