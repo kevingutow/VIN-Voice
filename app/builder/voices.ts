@@ -13,3 +13,5 @@ export const VOICE_OPTIONS: VoiceOption[] = [
 ];
 
 export const DEFAULT_VOICE_ID = VOICE_OPTIONS[0].id;
+
+export const VALID_VOICE_IDS = new Set(VOICE_OPTIONS.map((voice) => voice.id));

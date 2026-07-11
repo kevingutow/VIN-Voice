@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { FormState } from "../../builder/types";
+import { isFormState, type FormState } from "../../builder/types";
 
 const client = new Anthropic();
 
@@ -22,12 +22,6 @@ Condition & features, in the seller's own words:
 ${vehicle.features || "Not provided"}
 
 Write the voice tour script now.`;
-}
-
-function isFormState(value: unknown): value is FormState {
-  if (typeof value !== "object" || value === null) return false;
-  const required = ["year", "make", "model", "trim", "mileage", "price", "features"];
-  return required.every((key) => typeof (value as Record<string, unknown>)[key] === "string");
 }
 
 export async function POST(request: Request) {

@@ -1,7 +1,5 @@
-import { DEFAULT_VOICE_ID, VOICE_OPTIONS } from "../../builder/voices";
+import { DEFAULT_VOICE_ID, VALID_VOICE_IDS } from "../../builder/voices";
 import { synthesizeSpeech } from "./elevenlabs";
-
-const VALID_VOICE_IDS = new Set(VOICE_OPTIONS.map((voice) => voice.id));
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;

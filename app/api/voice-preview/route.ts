@@ -1,7 +1,5 @@
-import { VOICE_OPTIONS } from "../../builder/voices";
+import { VALID_VOICE_IDS } from "../../builder/voices";
 import { fetchVoicePreviewUrl, synthesizeSpeech } from "../generate-audio/elevenlabs";
-
-const VALID_VOICE_IDS = new Set(VOICE_OPTIONS.map((voice) => voice.id));
 
 const SAMPLE_TEXT =
   "Hey, thanks for stopping by. This is just a quick sample so you can hear how I sound.";

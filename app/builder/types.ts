@@ -19,3 +19,9 @@ export const initialForm: FormState = {
 };
 
 export const BUILDER_FORM_STORAGE_KEY = "vinvoice:builder-form";
+
+export function isFormState(value: unknown): value is FormState {
+  if (typeof value !== "object" || value === null) return false;
+  const required = ["year", "make", "model", "trim", "mileage", "price", "features"];
+  return required.every((key) => typeof (value as Record<string, unknown>)[key] === "string");
+}

@@ -3,20 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { formatMileage, formatPrice } from "../../lib/format";
 import { BUILDER_FORM_STORAGE_KEY, FormState } from "../types";
 import { DEFAULT_VOICE_ID, VOICE_OPTIONS, VoiceOption } from "../voices";
-
-function formatMileage(value: string) {
-  const n = Number(value);
-  return Number.isFinite(n) ? `${n.toLocaleString()} mi` : value;
-}
-
-function formatPrice(value: string) {
-  const n = Number(value);
-  return Number.isFinite(n)
-    ? `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-    : value;
-}
 
 function SummaryField({ label, value }: { label: string; value: string }) {
   return (
@@ -90,8 +79,16 @@ export default function BuilderReview() {
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [voiceId, setVoiceId] = useState(DEFAULT_VOICE_ID);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedListing, setSavedListing] = useState<{
+    listingUrl: string;
+    qrUrl: string;
+    qrDownloadUrl: string;
+  } | null>(null);
   const [previewStatus, setPreviewStatus] = useState<{
     voiceId: string;
     state: "loading" | "playing" | "error";
@@ -143,7 +140,10 @@ export default function BuilderReview() {
       }
       setScript(data.script);
       setAudioUrl(null);
+      setAudioBlob(null);
       setAudioError(null);
+      setSavedListing(null);
+      setSaveError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong generating the script.");
     } finally {
@@ -167,6 +167,8 @@ export default function BuilderReview() {
     if (!script) return;
     setIsGeneratingAudio(true);
     setAudioError(null);
+    setSavedListing(null);
+    setSaveError(null);
     try {
       const response = await fetch("/api/generate-audio", {
         method: "POST",
@@ -179,10 +181,34 @@ export default function BuilderReview() {
       }
       const blob = await response.blob();
       setAudioUrl(URL.createObjectURL(blob));
+      setAudioBlob(blob);
     } catch (err) {
       setAudioError(err instanceof Error ? err.message : "Something went wrong generating the audio.");
     } finally {
       setIsGeneratingAudio(false);
+    }
+  }
+
+  async function handleSaveListing() {
+    if (!script || !audioBlob) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const body = new FormData();
+      body.append("form", JSON.stringify(form));
+      body.append("script", script);
+      body.append("voiceId", voiceId);
+      body.append("audio", audioBlob, "voice-tour.mp3");
+      const response = await fetch("/api/save-listing", { method: "POST", body });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong saving your listing.");
+      }
+      setSavedListing(data);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Something went wrong saving your listing.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -276,6 +302,73 @@ export default function BuilderReview() {
                       : "Generate Audio"}
                 </button>
               </div>
+
+              {audioBlob && (
+                <div className="mt-6 border-t border-white/10 pt-6">
+                  {!savedListing ? (
+                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-zinc-300">Ready to print</p>
+                        <p className="mt-1 text-sm text-zinc-500">
+                          Save this listing to get a QR code buyers can scan.
+                        </p>
+                        {saveError && <p className="mt-2 text-sm text-red-400">{saveError}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveListing}
+                        disabled={isSaving}
+                        className="inline-flex w-full items-center justify-center rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-amber-400/40 disabled:text-zinc-950/70 sm:w-auto"
+                      >
+                        {isSaving ? "Saving…" : "Save & Get QR Code"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Vercel Blob URL, not a static asset */}
+                      <img
+                        src={savedListing.qrUrl}
+                        alt="QR code linking to this vehicle's voice tour"
+                        className="h-32 w-32 rounded-lg border border-white/10 bg-white p-2"
+                      />
+                      <div className="flex flex-col items-center gap-3 sm:items-start">
+                        <p className="text-sm font-medium text-zinc-300">Your listing is live</p>
+                        <a
+                          href={savedListing.listingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="break-all text-sm text-amber-400 hover:underline"
+                        >
+                          {savedListing.listingUrl}
+                        </a>
+                        <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(savedListing.listingUrl)}
+                            className="inline-flex items-center justify-center rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-white/30 hover:text-white"
+                          >
+                            Copy link
+                          </button>
+                          <a
+                            href={savedListing.qrDownloadUrl}
+                            download
+                            className="inline-flex items-center justify-center rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-white/30 hover:text-white"
+                          >
+                            Download QR
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => window.print()}
+                            className="inline-flex items-center justify-center rounded-full border border-white/15 px-4 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-white/30 hover:text-white"
+                          >
+                            Print
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           )}
 
