@@ -36,6 +36,30 @@ car. No filler, no hedging language.
 - **Close with a clear, low-friction next step.** "Scan the code, give
   us a call" — not a vague sign-off.
 
+## Real-world tone calibration (2026-07-12)
+
+The shipped `generate-script` prompt uses this dealership-closer stance,
+dialed up, with brand-character matching (luxury makes get elevated
+prestige language; mainstream makes get smart-money confidence). After
+hearing results, the user's calibration note: **the default tone is
+slightly too salesy and should come down a notch.**
+
+Key context that should shape the baseline voice: **most users are
+everyday people selling everyday cars with normal wear and tear, who
+want to sell fast and for the best price** — not a dealership moving
+pristine premium inventory. So:
+
+- Keep the luxury elevation for luxury brands (correct when it fires).
+- But make the *default* register more like a sharp, trustworthy,
+  still-persuasive pitch a regular owner would be comfortable putting on
+  their own car — credible over glossy. Slick-to-the-point-of-doubt
+  hurts a private seller more than it helps.
+- Lean a bit more on believable value + quick-sale appeal, a bit less on
+  showroom shine.
+
+This tone-down is the active next task on scripts — not yet applied to
+the prompt.
+
 ## Hard constraints (apply regardless of persona)
 
 - Never invent facts not present in the vehicle info or uploaded

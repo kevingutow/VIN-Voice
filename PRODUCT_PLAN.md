@@ -119,6 +119,19 @@ Hard constraints:
   licensing unconfirmed — see `CLAUDE.md`) plus audio-mixing work.
   This is the next piece of the script/audio-quality phase.
 
+**Open tone-calibration feedback (2026-07-12, do next):** the shipped
+dealership-closer voice sounds good but is **slightly too salesy** — the
+user wants it toned down a notch. Critical framing to bake in: the real
+user is an **everyday person selling an everyday car with normal wear
+and tear**, who wants to sell **quickly and for the best price** — not a
+showroom moving pristine luxury inventory. The luxury-brand elevation
+should stay (it's correct when a Porsche/Mercedes is entered), but the
+default/baseline tone should feel more like a trustworthy, sharp,
+still-persuasive pitch a regular seller would be comfortable putting on
+their own car — credible, not slick-to-the-point-of-doubt. Keep the
+honesty guardrails; lean a little more on believable value and
+quick-sale appeal, a little less on glossy hype.
+
 ## Photo/document upload
 
 New builder feature: let users attach photos or documents of service
@@ -205,6 +218,19 @@ and should be scoped as its own project rather than bolted on late.
 - **Referral / "sell your next one" nudge**: since most users are
   one-time, a light-touch reminder or referral incentive could recapture
   value from an otherwise single-transaction customer.
+- **Social-media distribution / share-out** (user idea, 2026-07-12): a
+  big way to get listings (and the brand) in front of buyers is letting
+  sellers post their generated tour straight to social. Core want: after
+  generating, offer a "share to social" option where the script/audio
+  actually *plays*. Key technical reality to design around — audio-only
+  posts don't play well in feeds; the shareable unit that auto-plays on
+  Instagram/TikTok/Facebook/X is a **short video** (e.g. the waveform +
+  vehicle photo/info + the narrated audio rendered to an MP4). So this
+  likely means auto-generating a ~30–60s share video, not just linking
+  the `/listing/[id]` page (though rich OpenGraph tags on that page are a
+  cheaper first step for link-preview sharing). Doubles as free
+  marketing: every shared post carries VIN Voice branding. Explore next
+  to the script work.
 
 ## Open questions to resolve
 
