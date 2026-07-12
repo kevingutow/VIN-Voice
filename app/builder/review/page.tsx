@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { formatMileage, formatPrice } from "../../lib/format";
 import { BUILDER_FORM_STORAGE_KEY, FormState } from "../types";
-import { DEFAULT_VOICE_ID, VOICE_OPTIONS, VoiceOption } from "../voices";
+import { DEFAULT_VOICE_ID, suggestVoiceId, VOICE_OPTIONS, VoiceOption } from "../voices";
 
 function SummaryField({ label, value }: { label: string; value: string }) {
   return (
@@ -21,12 +21,14 @@ function SummaryField({ label, value }: { label: string; value: string }) {
 function VoiceCard({
   voice,
   isSelected,
+  isSuggested,
   previewState,
   onSelect,
   onPlaySample,
 }: {
   voice: VoiceOption;
   isSelected: boolean;
+  isSuggested: boolean;
   previewState: "idle" | "loading" | "playing" | "error";
   onSelect: () => void;
   onPlaySample: () => void;
@@ -51,9 +53,16 @@ function VoiceCard({
           : "border-white/10 bg-zinc-950 hover:border-white/20"
       }`}
     >
-      <p className={`mb-3 text-sm font-semibold ${isSelected ? "text-amber-400" : "text-white"}`}>
-        {voice.label}
-      </p>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className={`text-sm font-semibold ${isSelected ? "text-amber-400" : "text-white"}`}>
+          {voice.label}
+        </p>
+        {isSuggested && (
+          <span className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-amber-300">
+            Suggested
+          </span>
+        )}
+      </div>
       <button
         type="button"
         onClick={(e) => {
@@ -113,8 +122,12 @@ export default function BuilderReview() {
       if (raw) {
         // One-time hydration from sessionStorage on mount — sessionStorage
         // is unavailable during SSR, so this can't happen during render.
+        const parsed: FormState = JSON.parse(raw);
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setForm(JSON.parse(raw));
+        setForm(parsed);
+        // Pre-select the voice that fits the vehicle's character (luxury →
+        // deep/calm, truck/cruiser → regular guy); the user can override.
+        setVoiceId(suggestVoiceId(parsed.make, parsed.model));
         return;
       }
     } catch {
@@ -270,6 +283,7 @@ export default function BuilderReview() {
                       key={voice.id}
                       voice={voice}
                       isSelected={voiceId === voice.id}
+                      isSuggested={voice.id === suggestVoiceId(form.make, form.model)}
                       previewState={
                         previewStatus?.voiceId === voice.id ? previewStatus.state : "idle"
                       }

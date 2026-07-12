@@ -57,8 +57,15 @@ pristine premium inventory. So:
 - Lean a bit more on believable value + quick-sale appeal, a bit less on
   showroom shine.
 
-This tone-down is the active next task on scripts — not yet applied to
-the prompt.
+**Applied (2026-07-12):** the prompt now frames the writer as helping an
+everyday owner sell their own car (credibility as the selling tool),
+makes the everyday/value register the default with luxury elevation as
+the earned exception, adds honest-wear handling, varies the close per
+vehicle (no stock "sells itself" / "come look, drive it, call me"
+combos), and guards against naming trim-variable specifics (engine,
+drivetrain, packages) the seller didn't provide. Verified across edge
+cases: work truck, 210k beater, disclosed accident, salvage title,
+motorcycle.
 
 ## Hard constraints (apply regardless of persona)
 

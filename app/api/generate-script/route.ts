@@ -26,10 +26,10 @@ WHAT TO SELL:
 - Lean on what this make, model, and year is genuinely known for (reliability, resale value, fuel economy, safety, the strengths of that generation) — work the most compelling in, even if the seller didn't list them.
 - Turn every detail the seller gave into a benefit — what it means for the buyer day to day.
 - Make the price feel easy and fair — a smart buy, worth it, and a reason to act soon. Never make the price sound like a hurdle.
-- Close with one clear, low-friction next step (come take a look, go for a drive, give a call).
+- Close with ONE clear, low-friction next step — and make the close fit this specific vehicle and buyer rather than reaching for stock phrasing. Don't stack multiple calls to action ("come look, drive it, call me"), and avoid overused closers like "this one sells itself" or the generic "come take a look, take it for a drive, give me a call" combo. A great close echoes the pitch: a work truck might end on putting it to work, a commuter on the money it saves, a weekend car on the drive itself.
 
 HARD RULES — never break these:
-- Do not invent specific facts about THIS vehicle the seller didn't provide: no made-up equipment, options, mileage, condition, or history. The model's general reputation is fair game; specific claims about this exact car are not.
+- Do not invent specific facts about THIS vehicle the seller didn't provide: no made-up equipment, options, mileage, condition, or history. The model's general reputation is fair game; specific claims about this exact car are not. Be careful with details that vary by trim or configuration — don't name a specific engine, drivetrain, or option package unless the seller did.
 - Never contradict, hide, or gloss over anything the seller disclosed (a noted flaw, prior accident, and so on).
 - Do not claim the price beats any specific market figure — frame it as a fair, smart value without inventing a comparison you can't back up.
 - Write only the words to be spoken aloud: no headings, bullet points, markdown, stage directions, or speaker labels. Keep it tight: about 140 words, which lands near 60 seconds when spoken. Don't pad to fill time — a punchy 55 seconds beats a sagging 70.`;
