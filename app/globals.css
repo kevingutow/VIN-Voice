@@ -44,3 +44,32 @@ body {
     transform: scaleY(1);
   }
 }
+
+/* Permanent warm-charcoal palette for everything below the hero (see
+   app/page.tsx WarmThemeZone usage). Single source of truth referenced via
+   Tailwind arbitrary values, e.g. bg-[var(--warm-bg)]. */
+:root {
+  --warm-bg: #2b2420;
+  --warm-surface: #382f28;
+  --warm-border: rgba(180, 140, 100, 0.15);
+  --off-white: #f4f1ea;
+}
+
+/* Scroll-triggered header state (see WarmThemeZone.tsx). Plain CSS keyed off
+   an attribute on <html> — rather than a Tailwind ancestor-selector variant
+   or React context — so the sticky header (rendered outside the zone in the
+   DOM) still responds regardless of DOM distance. Only the header's
+   background/border are scroll-linked; everything else above uses the
+   permanent palette directly. Border defaults to transparent (not absent)
+   so the 1px reserved space doesn't shift layout when it fades in. */
+.theme-header {
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 500ms ease,
+    border-color 500ms ease;
+}
+
+html[data-theme="warm"] .theme-header {
+  background-color: rgba(74, 63, 54, 0.92);
+  border-bottom-color: rgba(180, 140, 100, 0.3);
+}

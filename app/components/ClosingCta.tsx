@@ -20,8 +20,8 @@ const CheckmarkBadge = () => (
 
 export function ClosingCta() {
   return (
-    <section className="border-t border-white/10 px-6 py-24">
-      <div className="mx-auto flex max-w-3xl flex-col items-center rounded-3xl border border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-950 px-8 py-16 text-center">
+    <section className="border-t border-[var(--warm-border)] px-6 py-24">
+      <div className="mx-auto flex max-w-3xl flex-col items-center rounded-3xl border border-[var(--warm-border)] bg-[var(--warm-surface)] px-8 py-16 text-center">
         <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-400/10 text-amber-400">
           <CheckmarkBadge />
         </div>
